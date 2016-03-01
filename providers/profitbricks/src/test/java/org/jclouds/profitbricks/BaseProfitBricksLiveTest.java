@@ -18,8 +18,8 @@ package org.jclouds.profitbricks;
 
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_RUNNING;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_SUSPENDED;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.POLL_PREDICATE_DATACENTER;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.POLL_PREDICATE_SNAPSHOT;
+import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.TIMEOUT_DATACENTER_AVAILABLE;
+import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.TIMEOUT_SNAPSHOT_AVAILABLE;
 import static org.testng.Assert.assertTrue;
 
 import java.util.List;
@@ -63,9 +63,9 @@ public abstract class BaseProfitBricksLiveTest extends BaseApiLiveTest<ProfitBri
    protected ProfitBricksApi create(Properties props, Iterable<Module> modules) {
       Injector injector = newBuilder().modules(modules).overrides(props).buildInjector();
       dataCenterAvailable = injector.getInstance(Key.get(new TypeLiteral<Predicate<String>>() {
-      }, Names.named(POLL_PREDICATE_DATACENTER)));
+      }, Names.named(TIMEOUT_DATACENTER_AVAILABLE)));
       snapshotAvailable = injector.getInstance(Key.get(new TypeLiteral<Predicate<String>>() {
-      }, Names.named(POLL_PREDICATE_SNAPSHOT)));
+      }, Names.named(TIMEOUT_SNAPSHOT_AVAILABLE)));
       serverRunning = injector.getInstance(Key.get(new TypeLiteral<Predicate<String>>() {
       }, Names.named(TIMEOUT_NODE_RUNNING)));
       serverSuspended = injector.getInstance(Key.get(new TypeLiteral<Predicate<String>>() {

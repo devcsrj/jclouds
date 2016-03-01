@@ -18,7 +18,7 @@ package org.jclouds.profitbricks.compute.strategy;
 
 import static com.google.common.collect.Iterables.find;
 import static org.jclouds.Constants.PROPERTY_USER_THREADS;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.POLL_PREDICATE_DATACENTER;
+import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.TIMEOUT_DATACENTER_AVAILABLE;
 
 import java.util.Map;
 import java.util.Set;
@@ -70,7 +70,7 @@ public class AssignDataCenterToTemplate extends CreateNodesWithGroupEncodedIntoN
          GroupNamingConvention.Factory namingConvention,
          @Named(PROPERTY_USER_THREADS) ListeningExecutorService userExecutor,
          CustomizeNodeAndAddToGoodMapOrPutExceptionIntoBadMap.Factory customizeNodeAndAddToGoodMapOrPutExceptionIntoBadMapFactory,
-         ProfitBricksApi api, @Named(POLL_PREDICATE_DATACENTER) Predicate<String> waitDcUntilAvailable) {
+         ProfitBricksApi api, @Named(TIMEOUT_DATACENTER_AVAILABLE) Predicate<String> waitDcUntilAvailable) {
       super(addNodeWithGroupStrategy, listNodesStrategy, namingConvention, userExecutor,
             customizeNodeAndAddToGoodMapOrPutExceptionIntoBadMapFactory);
       this.api = api;

@@ -16,15 +16,12 @@
  */
 package org.jclouds.profitbricks.compute.config;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_RUNNING;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_SUSPENDED;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.POLL_INITIAL_PERIOD;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.POLL_MAX_PERIOD;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.POLL_PREDICATE_DATACENTER;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.POLL_PREDICATE_SNAPSHOT;
 import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.TIMEOUT_DATACENTER_AVAILABLE;
+import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.TIMEOUT_SNAPSHOT_AVAILABLE;
 import static org.jclouds.util.Predicates2.retry;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.concurrent.TimeUnit;
 
@@ -37,6 +34,9 @@ import org.jclouds.compute.domain.Hardware;
 import org.jclouds.compute.domain.Image;
 import org.jclouds.compute.domain.NodeMetadata;
 import org.jclouds.compute.domain.Volume;
+import org.jclouds.compute.extensions.ImageExtension;
+import org.jclouds.compute.reference.ComputeServiceConstants.PollPeriod;
+import org.jclouds.compute.reference.ComputeServiceConstants.Timeouts;
 import org.jclouds.compute.strategy.CreateNodesInGroupThenAddToSet;
 import org.jclouds.domain.Location;
 import org.jclouds.functions.IdentityFunction;
@@ -47,6 +47,7 @@ import org.jclouds.profitbricks.ProfitBricksApi;
 import org.jclouds.profitbricks.compute.ProfitBricksComputeServiceAdapter;
 import org.jclouds.profitbricks.compute.concurrent.ProvisioningJob;
 import org.jclouds.profitbricks.compute.concurrent.ProvisioningManager;
+import org.jclouds.profitbricks.compute.extensions.ProfitBricksImageExtension;
 import org.jclouds.profitbricks.compute.function.ProvisionableToImage;
 import org.jclouds.profitbricks.compute.function.ServerToNodeMetadata;
 import org.jclouds.profitbricks.compute.function.StorageToVolume;
@@ -63,7 +64,6 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
-
 
 public class ProfitBricksComputeServiceContextModule extends
         ComputeServiceAdapterContextModule<Server, Hardware, Provisionable, Location> {
@@ -93,32 +93,35 @@ public class ProfitBricksComputeServiceContextModule extends
 
       bind(new TypeLiteral<Function<Hardware, Hardware>>() {
       }).to(Class.class.cast(IdentityFunction.class));
+      
+      bind(new TypeLiteral<ImageExtension>(){
+      }).to(ProfitBricksImageExtension.class);
    }
 
    @Provides
    @Singleton
-   @Named(POLL_PREDICATE_DATACENTER)
+   @Named(TIMEOUT_DATACENTER_AVAILABLE)
    Predicate<String> provideDataCenterAvailablePredicate(
-           final ProfitBricksApi api, ComputeConstants constants) {
+           final ProfitBricksApi api, ProfitBricksTimeouts timeouts, PollPeriod pollPeriod) {
       return retry(new DataCenterProvisioningStatePredicate(
               api, ProvisioningState.AVAILABLE),
-              constants.pollTimeout(), constants.pollPeriod(), constants.pollMaxPeriod(), TimeUnit.SECONDS);
+              timeouts.dataCenterAvailable(), pollPeriod.pollInitialPeriod, pollPeriod.pollMaxPeriod, TimeUnit.SECONDS);
    }
 
    @Provides
    @Named(TIMEOUT_NODE_RUNNING)
-   Predicate<String> provideServerRunningPredicate(final ProfitBricksApi api, ComputeConstants constants) {
+   Predicate<String> provideServerRunningPredicate(final ProfitBricksApi api, Timeouts timeouts, PollPeriod pollPeriod) {
       return retry(new ServerStatusPredicate(
               api, Server.Status.RUNNING),
-              constants.pollTimeout(), constants.pollPeriod(), constants.pollMaxPeriod(), TimeUnit.SECONDS);
+              timeouts.nodeRunning, pollPeriod.pollInitialPeriod, pollPeriod.pollMaxPeriod, TimeUnit.SECONDS);
    }
 
    @Provides
    @Named(TIMEOUT_NODE_SUSPENDED)
-   Predicate<String> provideServerSuspendedPredicate(final ProfitBricksApi api, ComputeConstants constants) {
+   Predicate<String> provideServerSuspendedPredicate(final ProfitBricksApi api, Timeouts timeouts, PollPeriod constants) {
       return retry(new ServerStatusPredicate(
               api, Server.Status.SHUTOFF),
-              constants.pollTimeout(), constants.pollPeriod(), constants.pollMaxPeriod(), TimeUnit.SECONDS);
+              timeouts.nodeSuspended, constants.pollInitialPeriod, constants.pollMaxPeriod, TimeUnit.SECONDS);
    }
 
    @Provides
@@ -132,11 +135,11 @@ public class ProfitBricksComputeServiceContextModule extends
 
    @Provides
    @Singleton
-   @Named(POLL_PREDICATE_SNAPSHOT)
-   Predicate<String> provideSnapshotAvailablePredicate(final ProfitBricksApi api, ComputeConstants constants) {
+   @Named(TIMEOUT_SNAPSHOT_AVAILABLE)
+   Predicate<String> provideSnapshotAvailablePredicate(final ProfitBricksApi api, Timeouts timeouts, PollPeriod constants) {
       return retry(new SnapshotProvisioningStatePredicate(
               api, ProvisioningState.AVAILABLE),
-              constants.pollTimeout(), constants.pollPeriod(), constants.pollMaxPeriod(), TimeUnit.SECONDS);
+              timeouts.imageAvailable, constants.pollInitialPeriod, constants.pollMaxPeriod, TimeUnit.SECONDS);
    }
 
    static class DataCenterProvisioningStatePredicate implements Predicate<String> {
@@ -194,30 +197,14 @@ public class ProfitBricksComputeServiceContextModule extends
    }
 
    @Singleton
-   public static class ComputeConstants {
+   public static class ProfitBricksTimeouts {
 
       @Inject
       @Named(TIMEOUT_DATACENTER_AVAILABLE)
-      private String pollTimeout;
+      private String dataCenterAvailable;
 
-      @Inject
-      @Named(POLL_INITIAL_PERIOD)
-      private String pollPeriod;
-
-      @Inject
-      @Named(POLL_MAX_PERIOD)
-      private String pollMaxPeriod;
-
-      public long pollTimeout() {
-         return Long.parseLong(pollTimeout);
-      }
-
-      public long pollPeriod() {
-         return Long.parseLong(pollPeriod);
-      }
-
-      public long pollMaxPeriod() {
-         return Long.parseLong(pollMaxPeriod);
+      public long dataCenterAvailable() {
+         return Long.parseLong(dataCenterAvailable);
       }
    }
 }

@@ -14,15 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jclouds.profitbricks.config;
+package org.jclouds.profitbricks.compute.extensions;
 
-public class ProfitBricksComputeProperties {
+import org.jclouds.compute.extensions.internal.BaseImageExtensionLiveTest;
+import org.jclouds.sshj.config.SshjSshClientModule;
+import org.testng.annotations.Test;
 
-   public static final String TIMEOUT_DATACENTER_AVAILABLE  = "jclouds.profitbricks.timeout.datacenter-available";
-   public static final String TIMEOUT_SNAPSHOT_AVAILABLE    = "jclouds.profitbricks.timeout.snapshot-available";
+import com.google.inject.Module;
 
-   private ProfitBricksComputeProperties() {
-      throw new AssertionError("Intentionally unimplemented");
+@Test(groups = "live", singleThreaded = true, testName = "ProfitBricksImageExtensionLiveTest")
+public class ProfitBricksImageExtensionLiveTest extends BaseImageExtensionLiveTest {
+
+   public ProfitBricksImageExtensionLiveTest() {
+      provider = "profitbricks";
+   }
+
+   @Override
+   protected Module getSshModule() {
+      return new SshjSshClientModule();
    }
 
 }

@@ -23,7 +23,7 @@ import static com.google.common.util.concurrent.Futures.allAsList;
 import static com.google.common.util.concurrent.Futures.getUnchecked;
 import static java.lang.String.format;
 import static org.jclouds.Constants.PROPERTY_USER_THREADS;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.POLL_PREDICATE_DATACENTER;
+import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.TIMEOUT_DATACENTER_AVAILABLE;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -90,7 +90,7 @@ public class ProfitBricksComputeServiceAdapter implements ComputeServiceAdapter<
 
    @Inject
    ProfitBricksComputeServiceAdapter(ProfitBricksApi api,
-           @Named(POLL_PREDICATE_DATACENTER) Predicate<String> waitDcUntilAvailable,
+           @Named(TIMEOUT_DATACENTER_AVAILABLE) Predicate<String> waitDcUntilAvailable,
            @Named(PROPERTY_USER_THREADS) ListeningExecutorService executorService,
            ProvisioningJob.Factory jobFactory,
            ProvisioningManager provisioningManager) {

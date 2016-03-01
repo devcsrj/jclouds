@@ -17,7 +17,7 @@
 package org.jclouds.profitbricks.compute.concurrent;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.POLL_PREDICATE_DATACENTER;
+import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.TIMEOUT_DATACENTER_AVAILABLE;
 
 import java.util.concurrent.Callable;
 
@@ -40,7 +40,7 @@ public class ProvisioningJob implements Callable {
    private final Supplier<Object> operation;
 
    @Inject
-   ProvisioningJob(@Named(POLL_PREDICATE_DATACENTER) Predicate<String> waitDataCenterUntilReady,
+   ProvisioningJob(@Named(TIMEOUT_DATACENTER_AVAILABLE) Predicate<String> waitDataCenterUntilReady,
            @Assisted String group, @Assisted Supplier<Object> operation) {
       this.waitDataCenterUntilReady = waitDataCenterUntilReady;
       this.group = checkNotNull(group, "group cannot be null");

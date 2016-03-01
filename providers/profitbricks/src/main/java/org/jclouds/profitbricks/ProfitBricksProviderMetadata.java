@@ -17,7 +17,10 @@
 package org.jclouds.profitbricks;
 
 import static org.jclouds.Constants.PROPERTY_ISO3166_CODES;
+import static org.jclouds.Constants.PROPERTY_SESSION_INTERVAL;
 import static org.jclouds.Constants.PROPERTY_SO_TIMEOUT;
+import static org.jclouds.compute.config.ComputeServiceProperties.POLL_INITIAL_PERIOD;
+import static org.jclouds.compute.config.ComputeServiceProperties.POLL_MAX_PERIOD;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_RUNNING;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_SUSPENDED;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_TERMINATED;
@@ -26,8 +29,6 @@ import static org.jclouds.location.reference.LocationConstants.PROPERTY_REGION;
 import static org.jclouds.location.reference.LocationConstants.PROPERTY_REGIONS;
 import static org.jclouds.location.reference.LocationConstants.PROPERTY_ZONE;
 import static org.jclouds.location.reference.LocationConstants.PROPERTY_ZONES;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.POLL_INITIAL_PERIOD;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.POLL_MAX_PERIOD;
 import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.TIMEOUT_DATACENTER_AVAILABLE;
 
 import java.net.URI;
@@ -60,7 +61,7 @@ public class ProfitBricksProviderMetadata extends BaseProviderMetadata {
 
    public static Properties defaultProperties() {
       Properties properties = ProfitBricksApiMetadata.defaultProperties();
-      
+
       properties.setProperty(PROPERTY_REGIONS, "de,us");
       properties.setProperty(PROPERTY_REGION + ".de.zones", "de/fkb,de/fra");
       properties.setProperty(PROPERTY_REGION + ".us.zones", "us/las,us/lasdev");
@@ -72,21 +73,21 @@ public class ProfitBricksProviderMetadata extends BaseProviderMetadata {
       properties.setProperty(PROPERTY_ZONE + ".de/fra." + ISO3166_CODES, "DE-HE");
       properties.setProperty(PROPERTY_ZONE + ".us/las." + ISO3166_CODES, "US-NV");
       properties.setProperty(PROPERTY_ZONE + ".us/lasdebv." + ISO3166_CODES, "US-NV");
-      
-      properties.put(TIMEOUT_DATACENTER_AVAILABLE, 30L * 60L); // 30 minutes
-      properties.put(POLL_INITIAL_PERIOD, 5L);
-      properties.put(POLL_MAX_PERIOD, 60L);
 
       properties.put("jclouds.ssh.max-retries", "7");
       properties.put("jclouds.ssh.retry-auth", "true");
-      
+      properties.put(PROPERTY_SESSION_INTERVAL, 60 * 60);
       properties.put(PROPERTY_SO_TIMEOUT, 10 * 60 * 1000);
 
+      properties.put(TIMEOUT_DATACENTER_AVAILABLE, 30L * 60L); // 30 minutes
       // Node might still not be available even after DataCenter is done provisioning
       // Use 5-minute timeout by default
       properties.put(TIMEOUT_NODE_RUNNING, 5 * 60 * 1000);
       properties.put(TIMEOUT_NODE_SUSPENDED, 5 * 60 * 1000);
       properties.put(TIMEOUT_NODE_TERMINATED, 5 * 60 * 1000);
+
+      properties.put(POLL_INITIAL_PERIOD, 5L);
+      properties.put(POLL_MAX_PERIOD, 60L);
 
       return properties;
    }
