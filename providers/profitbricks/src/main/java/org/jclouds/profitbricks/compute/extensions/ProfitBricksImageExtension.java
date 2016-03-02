@@ -17,7 +17,7 @@
 package org.jclouds.profitbricks.compute.extensions;
 
 import static com.google.common.base.Preconditions.checkState;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.TIMEOUT_SNAPSHOT_AVAILABLE;
+import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_IMAGE_AVAILABLE;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -70,7 +70,7 @@ public class ProfitBricksImageExtension implements ImageExtension {
 
    @Inject
    ProfitBricksImageExtension(ProfitBricksApi api,
-           @Named(TIMEOUT_SNAPSHOT_AVAILABLE) Predicate<String> snapshotAvailablePredicate,
+           @Named(TIMEOUT_IMAGE_AVAILABLE) Predicate<String> snapshotAvailablePredicate,
            Function<Provisionable, Image> imageTransformer,
            @Named(Constants.PROPERTY_USER_THREADS) ListeningExecutorService userExecutor) {
       this.api = api;
@@ -87,7 +87,7 @@ public class ProfitBricksImageExtension implements ImageExtension {
          throw new NoSuchElementException("Cannot find server with id: " + id);
 
       List<Storage> storages = server.storages();
-      if (storages.isEmpty() || !Iterables.tryFind(storages, matchBootDevice).isPresent())
+      if (!Iterables.any(storages, matchBootDevice))
          throw new NoSuchElementException("Server " + id + " does not contain a boot device");
 
       return new ImageTemplateBuilder.CloneImageTemplateBuilder().nodeId(id).name(name).build();
@@ -108,6 +108,8 @@ public class ProfitBricksImageExtension implements ImageExtension {
               .name(template.getName())
               .description(template.getName() + " (created with jclouds)")
               .build());
+
+      logger.info(">> creating a snapshot from storage: " + bootDevice.id());
 
       return userExecutor.submit(new Callable<Image>() {
          @Override
@@ -133,7 +135,7 @@ public class ProfitBricksImageExtension implements ImageExtension {
          } catch (Exception ex) {
             logger.error(ex, ">> error deleting snapshot %s..", id);
          }
-      return true;
+      return false;
    }
 
 }

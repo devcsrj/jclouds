@@ -19,7 +19,6 @@ package org.jclouds.profitbricks.config;
 public class ProfitBricksComputeProperties {
 
    public static final String TIMEOUT_DATACENTER_AVAILABLE  = "jclouds.profitbricks.timeout.datacenter-available";
-   public static final String TIMEOUT_SNAPSHOT_AVAILABLE    = "jclouds.profitbricks.timeout.snapshot-available";
 
    private ProfitBricksComputeProperties() {
       throw new AssertionError("Intentionally unimplemented");

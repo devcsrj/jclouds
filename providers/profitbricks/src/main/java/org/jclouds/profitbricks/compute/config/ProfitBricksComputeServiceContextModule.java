@@ -16,10 +16,10 @@
  */
 package org.jclouds.profitbricks.compute.config;
 
+import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_IMAGE_AVAILABLE;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_RUNNING;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_SUSPENDED;
 import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.TIMEOUT_DATACENTER_AVAILABLE;
-import static org.jclouds.profitbricks.config.ProfitBricksComputeProperties.TIMEOUT_SNAPSHOT_AVAILABLE;
 import static org.jclouds.util.Predicates2.retry;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -135,7 +135,7 @@ public class ProfitBricksComputeServiceContextModule extends
 
    @Provides
    @Singleton
-   @Named(TIMEOUT_SNAPSHOT_AVAILABLE)
+   @Named(TIMEOUT_IMAGE_AVAILABLE)
    Predicate<String> provideSnapshotAvailablePredicate(final ProfitBricksApi api, Timeouts timeouts, PollPeriod constants) {
       return retry(new SnapshotProvisioningStatePredicate(
               api, ProvisioningState.AVAILABLE),
