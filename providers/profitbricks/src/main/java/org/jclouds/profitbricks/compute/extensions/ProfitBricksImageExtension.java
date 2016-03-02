@@ -41,6 +41,7 @@ import org.jclouds.profitbricks.domain.Server;
 import org.jclouds.profitbricks.domain.Snapshot;
 import org.jclouds.profitbricks.domain.Storage;
 
+import com.google.common.annotations.Beta;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -49,6 +50,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 
+@Beta
 @Singleton
 public class ProfitBricksImageExtension implements ImageExtension {
 
@@ -109,7 +111,7 @@ public class ProfitBricksImageExtension implements ImageExtension {
               .description(template.getName() + " (created with jclouds)")
               .build());
 
-      logger.info(">> creating a snapshot from storage: " + bootDevice.id());
+      logger.info(">> creating a snapshot from storage: %s", bootDevice.id());
 
       return userExecutor.submit(new Callable<Image>() {
          @Override
