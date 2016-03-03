@@ -43,12 +43,17 @@ import org.jclouds.profitbricks.domain.Storage;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Function;
+import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.base.Predicate;
+import com.google.common.base.Supplier;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
+import java.util.Set;
+import org.jclouds.collect.Memoized;
+import org.jclouds.compute.suppliers.ImageCacheSupplier;
 
 @Beta
 @Singleton
@@ -68,16 +73,20 @@ public class ProfitBricksImageExtension implements ImageExtension {
    private final ProfitBricksApi api;
    private final Predicate<String> snapshotAvailablePredicate;
    private final Function<Provisionable, Image> imageTransformer;
+   private final ImageCacheSupplier images;
    private final ListeningExecutorService userExecutor;
 
    @Inject
    ProfitBricksImageExtension(ProfitBricksApi api,
            @Named(TIMEOUT_IMAGE_AVAILABLE) Predicate<String> snapshotAvailablePredicate,
            Function<Provisionable, Image> imageTransformer,
+           @Memoized Supplier<Set<? extends Image>> images,
            @Named(Constants.PROPERTY_USER_THREADS) ListeningExecutorService userExecutor) {
       this.api = api;
       this.snapshotAvailablePredicate = snapshotAvailablePredicate;
       this.imageTransformer = imageTransformer;
+      checkArgument(images instanceof ImageCacheSupplier, "an instance of the ImageCacheSupplier is needed");
+      this.images = ImageCacheSupplier.class.cast(images);
       this.userExecutor = userExecutor;
    }
 
@@ -118,7 +127,10 @@ public class ProfitBricksImageExtension implements ImageExtension {
          public Image call() throws Exception {
             if (snapshotAvailablePredicate.apply(requested.id())) {
                Snapshot built = api.snapshotApi().getSnapshot(requested.id());
-               return imageTransformer.apply(built);
+               Image newImage = imageTransformer.apply(built);
+               logger.info(">> registering new image (%s) to cache", newImage.getId());
+               images.registerImage(newImage);
+               return newImage; 
             }
 
             throw new UncheckedTimeoutException("Image was not created within the time limit: "
@@ -130,14 +142,18 @@ public class ProfitBricksImageExtension implements ImageExtension {
    @Override
    public boolean deleteImage(String id) {
       Snapshot snapshot = api.snapshotApi().getSnapshot(id);
+      boolean deleted = false;
       if (snapshot != null)
          try {
             logger.debug(">> deleting snapshot %s..", id);
-            return api.snapshotApi().deleteSnapshot(id);
+            if (api.snapshotApi().deleteSnapshot(id)) {
+                deleted = true;
+                images.removeImage(id);
+            }
          } catch (Exception ex) {
             logger.error(ex, ">> error deleting snapshot %s..", id);
          }
-      return false;
+      return deleted;
    }
 
 }
