@@ -114,11 +114,23 @@ public class ProfitBricksComputeServiceAdapter implements ComputeServiceAdapter<
       Hardware hardware = template.getHardware();
 
       TemplateOptions options = template.getOptions();
-      final String loginUser = isNullOrEmpty(options.getLoginUser()) ? "root" : options.getLoginUser();
-      final String password = options.hasLoginPassword() ? options.getLoginPassword() : Passwords.generate();
-
       final org.jclouds.compute.domain.Image image = template.getImage();
+      Provisionable.Type provisionableType = Provisionable.Type.fromValue(
+                image.getUserMetadata().get(ProvisionableToImage.KEY_PROVISIONABLE_TYPE));
 
+      String loginUser = "root";
+      String password;
+      if (options.hasLoginPassword()) {
+          password = options.getLoginPassword();
+          if (!isNullOrEmpty(options.getLoginUser()))
+              loginUser = options.getLoginUser();
+      } else {
+          // don't generate a password for snapshots
+          password = provisionableType == Provisionable.Type.IMAGE ? Passwords.generate() : null;
+          if (password == null)
+              loginUser = null; // set to null so that no LoginCredentials is created
+      }
+      
       // provision all storages based on hardware
       List<? extends Volume> volumes = hardware.getVolumes();
       List<String> storageIds = Lists.newArrayListWithExpectedSize(volumes.size());
@@ -131,8 +143,6 @@ public class ProfitBricksComputeServiceAdapter implements ComputeServiceAdapter<
             if (i == 1) {
                storageBuilder.mountImageId(image.getId());
                // we don't need to pass password to the API if we're using a snapshot
-               Provisionable.Type provisionableType = Provisionable.Type.fromValue(
-                       image.getUserMetadata().get(ProvisionableToImage.KEY_PROVISIONABLE_TYPE));
                if (provisionableType == Provisionable.Type.IMAGE)
                   storageBuilder.imagePassword(password);
             }
